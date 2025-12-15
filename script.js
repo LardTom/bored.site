@@ -25,7 +25,7 @@ const stages = {
     },
     4: {
         name: "CHECKSUM_VALIDATION",
-        answer: "4713",
+        answer: "4889",
         hint: "Berechne die Checksumme aus den vorherigen Antworten"
     }
 };
