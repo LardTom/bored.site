@@ -3,73 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>??? Easter Egg ???</title>
+    <title>SYSTEM_ACCESS_TERMINAL</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1 class="glitch" data-text="GEHEIME MISSION">GEHEIME MISSION</h1>
-            <p class="subtitle">Ein Easter Egg nur für die Mutigen...</p>
-        </div>
+    <div class="scanlines"></div>
 
-        <div id="intro-screen" class="screen active">
-            <div class="info-box">
-                <h2>🎮 Willkommen, Agent!</h2>
-                <p>Du hast ein verstecktes Easter Egg gefunden!</p>
-                <p>Um das geheime Passwort zu erhalten, musst du das <strong>Memory-Sequenz-Spiel</strong> meistern.</p>
-                <div class="rules">
-                    <h3>📋 Spielregeln:</h3>
-                    <ul>
-                        <li>Merke dir die Farbsequenz, die aufleuchtet</li>
-                        <li>Wiederhole die Sequenz durch Klicken der Farben</li>
-                        <li>Jede Runde wird die Sequenz länger</li>
-                        <li>Erreiche Level 5 um das Passwort zu erhalten!</li>
-                    </ul>
-                </div>
-                <button class="btn-start" onclick="startGame()">🚀 SPIEL STARTEN</button>
+    <div class="terminal">
+        <!-- Boot Screen -->
+        <div id="boot-screen" class="screen active">
+            <div class="terminal-content">
+                <pre id="boot-text"></pre>
+                <div class="cursor-blink" id="boot-cursor">_</div>
             </div>
         </div>
 
-        <div id="game-screen" class="screen">
-            <div class="game-info">
-                <div class="stat">
-                    <span class="label">Level:</span>
-                    <span id="level" class="value">1</span>
-                </div>
-                <div class="stat">
-                    <span class="label">Sequenz-Länge:</span>
-                    <span id="sequence-length" class="value">3</span>
+        <!-- Main Terminal -->
+        <div id="terminal-screen" class="screen">
+            <div class="terminal-header">
+                <span class="terminal-title">RESTRICTED ACCESS TERMINAL v2.4.7</span>
+                <span class="terminal-status" id="status">STAGE <span id="current-stage">1</span>/4</span>
+            </div>
+
+            <div class="terminal-content">
+                <div id="terminal-output"></div>
+
+                <div class="input-line">
+                    <span class="prompt">&gt;</span>
+                    <input type="text" id="terminal-input" class="terminal-input" autocomplete="off" spellcheck="false">
+                    <span class="cursor">_</span>
                 </div>
             </div>
 
-            <div id="message" class="message"></div>
-
-            <div class="game-board">
-                <div class="color-pad red" data-color="red" onclick="playerClick('red')"></div>
-                <div class="color-pad green" data-color="green" onclick="playerClick('green')"></div>
-                <div class="color-pad blue" data-color="blue" onclick="playerClick('blue')"></div>
-                <div class="color-pad yellow" data-color="yellow" onclick="playerClick('yellow')"></div>
-            </div>
-
-            <div class="controls">
-                <button class="btn-secondary" onclick="resetGame()">🔄 Neustart</button>
+            <div class="help-hint">
+                Tipp: Tippe 'help' für Hilfe
             </div>
         </div>
 
-        <div id="win-screen" class="screen">
-            <div class="win-box">
-                <h2 class="win-title">🎉 GRATULIERE!</h2>
-                <p class="win-message">Du hast das Spiel gemeistert!</p>
-                <div class="password-reveal">
-                    <h3>🔐 Dein Passwort:</h3>
-                    <div class="password-box">
-                        <code id="password">sicheresPasswort!123</code>
-                        <button class="btn-copy" onclick="copyPassword()">📋 Kopieren</button>
+        <!-- Success Screen -->
+        <div id="success-screen" class="screen">
+            <div class="terminal-content">
+                <pre class="success-ascii">
+    ███████╗██╗   ██╗ ██████╗ ██████╗███████╗███████╗███████╗
+    ██╔════╝██║   ██║██╔════╝██╔════╝██╔════╝██╔════╝██╔════╝
+    ███████╗██║   ██║██║     ██║     █████╗  ███████╗███████╗
+    ╚════██║██║   ██║██║     ██║     ██╔══╝  ╚════██║╚════██║
+    ███████║╚██████╔╝╚██████╗╚██████╗███████╗███████║███████║
+    ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝╚══════╝╚══════╝╚══════╝
+                </pre>
+
+                <div class="success-message">
+                    <p class="decrypt-line">DECRYPTING CORE ACCESS CREDENTIALS...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <p class="decrypt-complete">DECRYPTION COMPLETE.</p>
+
+                    <div class="password-container">
+                        <div class="password-label">SYSTEM PASSWORD:</div>
+                        <div class="password-value">
+                            <code id="final-password">sicheresPasswort!123</code>
+                            <button class="copy-btn" onclick="copyPassword()">[COPY]</button>
+                        </div>
+                    </div>
+
+                    <div class="warning-text">
+                        ⚠ STORE THIS PASSWORD SECURELY ⚠
                     </div>
                 </div>
-                <p class="hint">💡 Notiere dir dieses Passwort gut!</p>
-                <button class="btn-secondary" onclick="playAgain()">🔁 Nochmal spielen</button>
             </div>
         </div>
     </div>
