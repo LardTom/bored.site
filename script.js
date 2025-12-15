@@ -1,382 +1,312 @@
-// Game State
-const gameState = {
-    currentStage: 1,
-    maxStages: 4,
-    stageAnswers: {},
-    bootComplete: false
+// bored.chat - Discord Clone JavaScript
+
+// State
+const state = {
+    currentChannel: 'general',
+    currentServer: 'home',
+    messages: {
+        general: [],
+        random: [],
+        memes: []
+    },
+    username: 'BoredUser',
+    userTag: '#1337'
 };
 
-// Stage Definitions
-const stages = {
-    1: {
-        name: "BINARY_DECODER",
-        answer: "GATE",
-        hint: "Konvertiere den Binärcode in ASCII-Zeichen"
-    },
-    2: {
-        name: "CIPHER_BREACH",
-        answer: "THIRTEEN",
-        hint: "ROT-Cipher entschlüsseln"
-    },
-    3: {
-        name: "SEQUENCE_ANALYSIS",
-        answer: "89",
-        hint: "Erkenne das Muster in der Sequenz"
-    },
-    4: {
-        name: "CHECKSUM_VALIDATION",
-        answer: "4889",
-        hint: "Berechne die Checksumme aus den vorherigen Antworten"
-    }
+// Sample messages for demo
+const sampleMessages = {
+    general: [
+        {
+            author: 'ChatMod',
+            avatar: generateAvatar('CM'),
+            timestamp: '12:30',
+            text: 'Willkommen bei bored.chat! 👋'
+        },
+        {
+            author: 'DevGuru',
+            avatar: generateAvatar('DG'),
+            timestamp: '12:32',
+            text: 'Hey everyone! This Discord clone looks amazing!'
+        },
+        {
+            author: 'DesignNinja',
+            avatar: generateAvatar('DN'),
+            timestamp: '12:35',
+            text: 'The UI is so clean! Love the dark theme 🎨'
+        }
+    ],
+    random: [
+        {
+            author: 'RandomUser',
+            avatar: generateAvatar('RU'),
+            timestamp: '11:20',
+            text: 'Anyone up for a game?'
+        }
+    ],
+    memes: [
+        {
+            author: 'MemeL ord',
+            avatar: generateAvatar('ML'),
+            timestamp: '10:15',
+            text: 'Post your best memes here! 🔥'
+        }
+    ]
 };
-
-// Boot sequence
-const bootSequence = [
-    "INITIALIZING SYSTEM...",
-    "LOADING KERNEL MODULES... OK",
-    "MOUNTING FILE SYSTEMS... OK",
-    "STARTING NETWORK SERVICES... OK",
-    "",
-    "████████████████████ 100%",
-    "",
-    "SYSTEM BOOT COMPLETE",
-    "",
-    "WARNING: UNAUTHORIZED ACCESS DETECTED",
-    "SECURITY PROTOCOL ENGAGED",
-    "",
-    "TO PROCEED, YOU MUST COMPLETE ALL AUTHENTICATION STAGES",
-    "",
-    "PRESS ANY KEY TO CONTINUE..."
-];
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    startBootSequence();
+    initializeApp();
+    setupEventListeners();
+    loadChannel('general');
 });
 
-// Boot sequence animation
-async function startBootSequence() {
-    const bootText = document.getElementById('boot-text');
-    const bootCursor = document.getElementById('boot-cursor');
+function initializeApp() {
+    // Load sample messages
+    state.messages = {...sampleMessages};
 
-    for (let line of bootSequence) {
-        await typeText(bootText, line + '\n', 30);
-        await sleep(100);
-    }
+    // Display initial messages
+    displayMessages(state.currentChannel);
+}
 
-    bootCursor.style.display = 'none';
-
-    // Wait for any key press
-    document.addEventListener('keydown', function initTerminal(e) {
-        if (!gameState.bootComplete) {
-            gameState.bootComplete = true;
-            document.removeEventListener('keydown', initTerminal);
-            showTerminal();
+function setupEventListeners() {
+    // Message input
+    const messageInput = document.getElementById('message-input');
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
         }
     });
-}
 
-// Show main terminal
-function showTerminal() {
-    showScreen('terminal-screen');
-    initializeStage(1);
-    focusInput();
-
-    // Setup input handler
-    const input = document.getElementById('terminal-input');
-    input.addEventListener('keydown', handleInput);
-}
-
-// Screen management
-function showScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId).classList.add('active');
-}
-
-// Terminal output
-function addOutput(text, className = '') {
-    const output = document.getElementById('terminal-output');
-    const line = document.createElement('div');
-    line.className = 'output-line ' + className;
-    line.textContent = text;
-    output.appendChild(line);
-    output.scrollTop = output.scrollHeight;
-}
-
-function addOutputHTML(html) {
-    const output = document.getElementById('terminal-output');
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = html;
-    output.appendChild(wrapper);
-    output.scrollTop = output.scrollHeight;
-}
-
-function clearOutput() {
-    document.getElementById('terminal-output').innerHTML = '';
-}
-
-// Input handling
-function handleInput(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        const input = e.target;
-        const command = input.value.trim();
-
-        if (command) {
-            addOutput('> ' + command, 'dim');
-            processCommand(command);
-            input.value = '';
-        }
-    }
-}
-
-function focusInput() {
-    document.getElementById('terminal-input').focus();
-}
-
-// Command processing
-function processCommand(command) {
-    const cmd = command.toLowerCase();
-
-    // Global commands
-    if (cmd === 'help') {
-        showHelp();
-        return;
-    }
-
-    if (cmd === 'clear') {
-        clearOutput();
-        return;
-    }
-
-    if (cmd === 'status') {
-        showStatus();
-        return;
-    }
-
-    if (cmd === 'hint') {
-        showHint();
-        return;
-    }
-
-    // Check answer for current stage
-    checkAnswer(command);
-}
-
-// Show help
-function showHelp() {
-    addOutput('', 'system');
-    addOutput('AVAILABLE COMMANDS:', 'success');
-    addOutput('  help   - Zeige diese Hilfe', 'dim');
-    addOutput('  status - Zeige aktuellen Fortschritt', 'dim');
-    addOutput('  hint   - Zeige Hinweis für aktuelles Rätsel', 'dim');
-    addOutput('  clear  - Lösche Terminal-Ausgabe', 'dim');
-    addOutput('', 'system');
-    addOutput('Gib deine Antwort direkt ein, um sie zu prüfen.', 'dim');
-    addOutput('', 'system');
-}
-
-// Show status
-function showStatus() {
-    addOutput('', 'system');
-    addOutput(`CURRENT STAGE: ${gameState.currentStage}/${gameState.maxStages}`, 'success');
-    addOutput(`STAGE NAME: ${stages[gameState.currentStage].name}`, 'dim');
-    addOutput('', 'system');
-}
-
-// Show hint
-function showHint() {
-    const hint = stages[gameState.currentStage].hint;
-    addOutput('', 'system');
-    addOutput('HINT: ' + hint, 'highlight');
-    addOutput('', 'system');
-}
-
-// Initialize stage
-function initializeStage(stageNum) {
-    gameState.currentStage = stageNum;
-    document.getElementById('current-stage').textContent = stageNum;
-
-    addOutput('', 'system');
-    addOutput('═'.repeat(60), 'success');
-    addOutput(`STAGE ${stageNum}: ${stages[stageNum].name}`, 'success');
-    addOutput('═'.repeat(60), 'success');
-    addOutput('', 'system');
-
-    // Load stage-specific content
-    switch (stageNum) {
-        case 1:
-            loadStage1();
-            break;
-        case 2:
-            loadStage2();
-            break;
-        case 3:
-            loadStage3();
-            break;
-        case 4:
-            loadStage4();
-            break;
-    }
-}
-
-// STAGE 1: Binary Decoder
-function loadStage1() {
-    addOutput('ENCRYPTED DATA INTERCEPTED:', 'dim');
-    addOutput('', 'system');
-    addOutput('01000111 01000001 01010100 01000101', 'highlight');
-    addOutput('', 'system');
-    addOutput('TASK: Dekodiere die Binärdaten in Text.', 'dim');
-    addOutput('HINWEIS: Jede 8-bit Gruppe ist ein ASCII-Zeichen.', 'dim');
-    addOutput('', 'system');
-}
-
-// STAGE 2: Cipher Breach
-function loadStage2() {
-    addOutput('VERSCHLÜSSELTE NACHRICHT GEFUNDEN:', 'dim');
-    addOutput('', 'system');
-    addOutput('GUVEGRRA', 'highlight');
-    addOutput('', 'system');
-    addOutput('TASK: Entschlüssele die Nachricht.', 'dim');
-    addOutput('HINWEIS: ROT13 - Jeder Buchstabe ist um 13 Positionen verschoben.', 'dim');
-    addOutput('ZUSATZ: Gib das englische Wort für die Zahl aus.', 'dim');
-    addOutput('', 'system');
-}
-
-// STAGE 3: Sequence Analysis
-function loadStage3() {
-    addOutput('SEQUENZ-ANALYSE ERFORDERLICH:', 'dim');
-    addOutput('', 'system');
-    addOutput('1, 1, 2, 3, 5, 8, 13, 21, 34, 55, ?', 'highlight');
-    addOutput('', 'system');
-    addOutput('TASK: Vervollständige die Sequenz.', 'dim');
-    addOutput('HINWEIS: Jede Zahl ist die Summe der zwei vorherigen.', 'dim');
-    addOutput('', 'system');
-}
-
-// STAGE 4: Checksum Validation
-function loadStage4() {
-    addOutput('FINALE AUTHENTIFIZIERUNG:', 'dim');
-    addOutput('', 'system');
-    addOutput('BERECHNE DIE CHECKSUMME:', 'highlight');
-    addOutput('', 'system');
-    addOutput('Nehme die Antworten der vorherigen Stages:', 'dim');
-    addOutput(`  Stage 1: ${gameState.stageAnswers[1]}`, 'dim');
-    addOutput(`  Stage 2: ${gameState.stageAnswers[2]}`, 'dim');
-    addOutput(`  Stage 3: ${gameState.stageAnswers[3]}`, 'dim');
-    addOutput('', 'system');
-    addOutput('FORMEL:', 'dim');
-    addOutput('  1. Anzahl Buchstaben in Stage 1 Antwort', 'dim');
-    addOutput('  2. Anzahl Buchstaben in Stage 2 Antwort', 'dim');
-    addOutput('  3. Die Zahl aus Stage 3', 'dim');
-    addOutput('  4. Kombiniere: [1][2][3] (z.B. 4, 8, 13 = 4813)', 'dim');
-    addOutput('', 'system');
-    addOutput('TASK: Berechne und gib die 4-stellige Checksumme ein.', 'dim');
-    addOutput('', 'system');
-}
-
-// Check answer
-function checkAnswer(answer) {
-    const correctAnswer = stages[gameState.currentStage].answer;
-
-    if (answer.toUpperCase() === correctAnswer.toUpperCase()) {
-        // Correct answer
-        gameState.stageAnswers[gameState.currentStage] = answer.toUpperCase();
-
-        addOutput('', 'success');
-        addOutput('✓ KORREKT! Authentifizierung erfolgreich.', 'success');
-        addOutput('', 'success');
-
-        if (gameState.currentStage < gameState.maxStages) {
-            setTimeout(() => {
-                initializeStage(gameState.currentStage + 1);
-            }, 1500);
-        } else {
-            // All stages completed
-            setTimeout(() => {
-                showSuccessScreen();
-            }, 1500);
-        }
-    } else {
-        // Wrong answer
-        addOutput('', 'error');
-        addOutput('✗ FALSCH! Zugriff verweigert.', 'error');
-        addOutput('Versuche es erneut oder tippe "hint" für einen Hinweis.', 'dim');
-        addOutput('', 'error');
-    }
-}
-
-// Success screen
-function showSuccessScreen() {
-    showScreen('success-screen');
-}
-
-// Copy password
-function copyPassword() {
-    const password = document.getElementById('final-password').textContent;
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(password).then(() => {
-            const btn = document.querySelector('.copy-btn');
-            const originalText = btn.textContent;
-            btn.textContent = '[COPIED]';
-            setTimeout(() => {
-                btn.textContent = originalText;
-            }, 2000);
-        }).catch(() => {
-            fallbackCopy(password);
-        });
-    } else {
-        fallbackCopy(password);
-    }
-}
-
-function fallbackCopy(text) {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-999999px';
-    document.body.appendChild(textArea);
-    textArea.select();
-
-    try {
-        document.execCommand('copy');
-        const btn = document.querySelector('.copy-btn');
-        const originalText = btn.textContent;
-        btn.textContent = '[COPIED]';
-        setTimeout(() => {
-            btn.textContent = originalText;
-        }, 2000);
-    } catch (err) {
-        alert('PASSWORD: ' + text);
-    }
-
-    document.body.removeChild(textArea);
-}
-
-// Utility functions
-function typeText(element, text, speed = 50) {
-    return new Promise((resolve) => {
-        let i = 0;
-        const interval = setInterval(() => {
-            if (i < text.length) {
-                element.textContent += text.charAt(i);
-                i++;
-            } else {
-                clearInterval(interval);
-                resolve();
+    // Channel clicks
+    document.querySelectorAll('.channel:not(.voice-channel)').forEach(channel => {
+        channel.addEventListener('click', () => {
+            const channelName = channel.dataset.channel;
+            if (channelName) {
+                switchChannel(channelName);
             }
-        }, speed);
+        });
+    });
+
+    // Server clicks
+    document.querySelectorAll('.server-icon').forEach(server => {
+        server.addEventListener('click', () => {
+            const serverName = server.dataset.server;
+            if (serverName) {
+                switchServer(serverName);
+            }
+        });
+    });
+
+    // Category collapse
+    document.querySelectorAll('.category-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const arrow = header.querySelector('.category-arrow');
+            const channels = header.parentElement.querySelector('.channels');
+
+            if (channels.style.display === 'none') {
+                channels.style.display = 'block';
+                arrow.style.transform = 'rotate(0deg)';
+            } else {
+                channels.style.display = 'none';
+                arrow.style.transform = 'rotate(-90deg)';
+            }
+        });
     });
 }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+function sendMessage() {
+    const input = document.getElementById('message-input');
+    const text = input.value.trim();
+
+    if (!text) return;
+
+    const message = {
+        author: state.username,
+        avatar: generateAvatar('B'),
+        timestamp: getCurrentTime(),
+        text: text
+    };
+
+    // Add message to current channel
+    if (!state.messages[state.currentChannel]) {
+        state.messages[state.currentChannel] = [];
+    }
+    state.messages[state.currentChannel].push(message);
+
+    // Clear input
+    input.value = '';
+
+    // Display updated messages
+    displayMessages(state.currentChannel);
 }
 
-// Auto-focus input when clicking anywhere
-document.addEventListener('click', () => {
-    if (gameState.bootComplete) {
-        focusInput();
+function switchChannel(channelName) {
+    state.currentChannel = channelName;
+
+    // Update active state
+    document.querySelectorAll('.channel').forEach(ch => ch.classList.remove('active'));
+    document.querySelector(`.channel[data-channel="${channelName}"]`)?.classList.add('active');
+
+    // Update channel name in header
+    document.getElementById('current-channel').textContent = channelName;
+
+    // Update placeholder
+    const input = document.getElementById('message-input');
+    input.placeholder = `Nachricht an #${channelName}`;
+
+    // Load channel messages
+    loadChannel(channelName);
+}
+
+function switchServer(serverName) {
+    state.currentServer = serverName;
+
+    // Update active server
+    document.querySelectorAll('.server-icon').forEach(s => s.classList.remove('active'));
+    document.querySelector(`.server-icon[data-server="${serverName}"]`)?.classList.add('active');
+
+    // Update server name
+    const serverNames = {
+        home: 'bored.chat',
+        gaming: 'Gaming Squad',
+        music: 'Music Lovers',
+        coding: 'Code & Coffee'
+    };
+
+    document.getElementById('server-name').textContent = serverNames[serverName] || 'bored.chat';
+}
+
+function loadChannel(channelName) {
+    displayMessages(channelName);
+}
+
+function displayMessages(channelName) {
+    const messagesContainer = document.getElementById('messages');
+    const messages = state.messages[channelName] || [];
+
+    // Clear existing messages except welcome
+    const welcomeMsg = messagesContainer.querySelector('.welcome-message');
+    messagesContainer.innerHTML = '';
+
+    if (welcomeMsg) {
+        const newWelcome = welcomeMsg.cloneNode(true);
+        newWelcome.querySelector('h1').textContent = `Willkommen bei #${channelName}!`;
+        newWelcome.querySelector('p').textContent = `Dies ist der Anfang des #${channelName} Channels.`;
+        messagesContainer.appendChild(newWelcome);
+    }
+
+    // Add messages
+    messages.forEach(msg => {
+        const messageEl = createMessageElement(msg);
+        messagesContainer.appendChild(messageEl);
+    });
+
+    // Scroll to bottom
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function createMessageElement(message) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message';
+
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = 'message-avatar';
+    avatarDiv.innerHTML = `<img src="${message.avatar}" alt="${message.author}">`;
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'message-header';
+    headerDiv.innerHTML = `
+        <span class="message-author">${message.author}</span>
+        <span class="message-timestamp">${message.timestamp}</span>
+    `;
+
+    const textDiv = document.createElement('div');
+    textDiv.className = 'message-text';
+    textDiv.textContent = message.text;
+
+    contentDiv.appendChild(headerDiv);
+    contentDiv.appendChild(textDiv);
+
+    messageDiv.appendChild(avatarDiv);
+    messageDiv.appendChild(contentDiv);
+
+    return messageDiv;
+}
+
+function generateAvatar(initials) {
+    // Generate random color
+    const colors = ['#5865f2', '#3ba55d', '#ed4245', '#faa81a', '#00aff4', '#9146ff'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
+    return `data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='${encodeURIComponent(color)}' width='80' height='80'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='32' fill='white'%3E${initials}%3C/text%3E%3C/svg%3E`;
+}
+
+function getCurrentTime() {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+}
+
+// Bot responses (Easter egg)
+function addBotResponse(channelName, delay = 2000) {
+    setTimeout(() => {
+        const responses = [
+            'Nice! 👍',
+            'Interesting point!',
+            'I agree!',
+            'Tell me more...',
+            'That\'s awesome! 🎉',
+            'Cool stuff!',
+            'For real? 😮',
+            'Makes sense!',
+        ];
+
+        const botNames = ['BotHelper', 'AutoMod', 'ChatBot'];
+        const botName = botNames[Math.floor(Math.random() * botNames.length)];
+
+        const message = {
+            author: botName,
+            avatar: generateAvatar('B'),
+            timestamp: getCurrentTime(),
+            text: responses[Math.floor(Math.random() * responses.length)]
+        };
+
+        if (!state.messages[channelName]) {
+            state.messages[channelName] = [];
+        }
+        state.messages[channelName].push(message);
+
+        // Only update if we're still on the same channel
+        if (state.currentChannel === channelName) {
+            displayMessages(channelName);
+        }
+    }, delay);
+}
+
+// Add bot response occasionally
+const originalSendMessage = sendMessage;
+sendMessage = function() {
+    originalSendMessage();
+
+    // 30% chance of bot response
+    if (Math.random() < 0.3) {
+        addBotResponse(state.currentChannel);
+    }
+};
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd + K for search (just for show)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.querySelector('.search-bar input')?.focus();
     }
 });
+
+console.log('🎮 bored.chat loaded successfully!');
+console.log('💬 Start chatting in the channels!');
