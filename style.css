@@ -406,6 +406,27 @@ body {
     .password-value code {
         font-size: 1.1rem;
     }
+
+    /* Better mobile input */
+    .terminal-input {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 4px 0;
+    }
+
+    .input-line {
+        padding: 8px 0;
+    }
+
+    /* Make boot screen touch-friendly */
+    #boot-screen {
+        cursor: pointer;
+    }
+
+    /* Larger help hint for mobile */
+    .help-hint {
+        font-size: 0.8rem;
+        opacity: 0.8;
+    }
 }
 
 @media (max-width: 480px) {

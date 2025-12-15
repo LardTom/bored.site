@@ -30,24 +30,33 @@ const stages = {
     }
 };
 
+// Detect mobile device
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+                || ('ontouchstart' in window)
+                || (navigator.maxTouchPoints > 0);
+
 // Boot sequence
-const bootSequence = [
-    "INITIALIZING SYSTEM...",
-    "LOADING KERNEL MODULES... OK",
-    "MOUNTING FILE SYSTEMS... OK",
-    "STARTING NETWORK SERVICES... OK",
-    "",
-    "████████████████████ 100%",
-    "",
-    "SYSTEM BOOT COMPLETE",
-    "",
-    "WARNING: UNAUTHORIZED ACCESS DETECTED",
-    "SECURITY PROTOCOL ENGAGED",
-    "",
-    "TO PROCEED, YOU MUST COMPLETE ALL AUTHENTICATION STAGES",
-    "",
-    "PRESS ANY KEY TO CONTINUE..."
-];
+function getBootSequence() {
+    const continueText = isMobile ? "TAP ANYWHERE TO CONTINUE..." : "PRESS ANY KEY TO CONTINUE...";
+
+    return [
+        "INITIALIZING SYSTEM...",
+        "LOADING KERNEL MODULES... OK",
+        "MOUNTING FILE SYSTEMS... OK",
+        "STARTING NETWORK SERVICES... OK",
+        "",
+        "████████████████████ 100%",
+        "",
+        "SYSTEM BOOT COMPLETE",
+        "",
+        "WARNING: UNAUTHORIZED ACCESS DETECTED",
+        "SECURITY PROTOCOL ENGAGED",
+        "",
+        "TO PROCEED, YOU MUST COMPLETE ALL AUTHENTICATION STAGES",
+        "",
+        continueText
+    ];
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -58,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function startBootSequence() {
     const bootText = document.getElementById('boot-text');
     const bootCursor = document.getElementById('boot-cursor');
+    const bootSequence = getBootSequence();
 
     for (let line of bootSequence) {
         await typeText(bootText, line + '\n', 30);
@@ -66,14 +76,38 @@ async function startBootSequence() {
 
     bootCursor.style.display = 'none';
 
-    // Wait for any key press
-    document.addEventListener('keydown', function initTerminal(e) {
+    // Function to proceed to terminal
+    function proceedToTerminal() {
         if (!gameState.bootComplete) {
             gameState.bootComplete = true;
-            document.removeEventListener('keydown', initTerminal);
+            // Remove all listeners
+            document.removeEventListener('keydown', keyListener);
+            document.removeEventListener('touchstart', touchListener);
+            document.removeEventListener('click', clickListener);
             showTerminal();
         }
-    });
+    }
+
+    // Keyboard listener
+    function keyListener(e) {
+        proceedToTerminal();
+    }
+
+    // Touch listener (for mobile)
+    function touchListener(e) {
+        e.preventDefault();
+        proceedToTerminal();
+    }
+
+    // Click listener (fallback)
+    function clickListener(e) {
+        proceedToTerminal();
+    }
+
+    // Add both keyboard and touch support
+    document.addEventListener('keydown', keyListener);
+    document.addEventListener('touchstart', touchListener, { passive: false });
+    document.addEventListener('click', clickListener);
 }
 
 // Show main terminal
@@ -131,7 +165,11 @@ function handleInput(e) {
 }
 
 function focusInput() {
-    document.getElementById('terminal-input').focus();
+    // On mobile, don't auto-focus to prevent keyboard popup annoyance
+    // User can tap the input field directly
+    if (!isMobile) {
+        document.getElementById('terminal-input').focus();
+    }
 }
 
 // Command processing
